@@ -20,6 +20,7 @@ export const AppContextProvider = (props) => {
   const [products, setProducts] = useState([]);
   const [userData, setUserData] = useState(null);
   const [isSeller, setIsSeller] = useState(false);
+  const [lastUserId, setLastUserId] = useState(''); // Track current user ID
 
   // Load cartItems from localStorage first if available
   const [cartItems, setCartItems] = useState(() => {
@@ -32,6 +33,21 @@ export const AppContextProvider = (props) => {
 
   // Debounce backend cart sync to avoid too many requests
   const syncTimeout = useRef(null);
+
+  // Clear cart data (used when user switches)
+  const clearCart = () => {
+    const emptyCart = {};
+    setCartItems(emptyCart);
+    setUserData(null); // Clear user data as well
+    
+    if (typeof window !== "undefined") {
+      localStorage.setItem("cart", JSON.stringify(emptyCart));
+      // Clear any cached user data
+      localStorage.removeItem('user_address');
+    }
+    
+    console.log('🧹 Cart and user data cleared for new user session');
+  };
 
   // Save cartItems to localStorage and schedule backend sync if logged in
   const updateCart = (newCart) => {
@@ -197,6 +213,55 @@ export const AppContextProvider = (props) => {
     return Math.round(total * 100) / 100; // rounded to 2 decimals
   };
 
+  // Monitor for user changes and clear data automatically
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    const checkUserChange = () => {
+      const currentUserId = sessionStorage.getItem('user_phone') || '';
+      
+      // If we have a previous user and current user is different (not empty)
+      if (lastUserId && currentUserId && lastUserId !== currentUserId) {
+        console.log(`🔄 DIFFERENT USER DETECTED IN APPCONTEXT:`);
+        console.log(`   Previous: ${lastUserId}`);
+        console.log(`   Current: ${currentUserId}`);
+        console.log(`🧹 Clearing cart data for new user...`);
+        
+        // Immediately clear cart for new user
+        const emptyCart = {};
+        setCartItems(emptyCart);
+        localStorage.setItem('cart', JSON.stringify(emptyCart));
+        setUserData(null);
+        
+        console.log('✅ Cart cleared for new user');
+      } else if (lastUserId && currentUserId && lastUserId === currentUserId) {
+        console.log(`✅ SAME USER CONTINUING SESSION: ${currentUserId}`);
+        console.log(`   Action: Keeping existing cart data`);
+      }
+      
+      // Update last user ID
+      setLastUserId(currentUserId);
+    };
+    
+    // Check on mount
+    checkUserChange();
+    
+    // Listen for auth changes
+    const handleAuthChange = () => {
+      setTimeout(checkUserChange, 100); // Small delay to ensure sessionStorage is updated
+    };
+    
+    window.addEventListener('authStateChanged', handleAuthChange);
+    
+    // Periodic check as backup
+    const interval = setInterval(checkUserChange, 1000);
+    
+    return () => {
+      window.removeEventListener('authStateChanged', handleAuthChange);
+      clearInterval(interval);
+    };
+  }, [lastUserId]);
+
   // Initial data fetches
   useEffect(() => {
     fetchProductData();
@@ -219,6 +284,7 @@ export const AppContextProvider = (props) => {
     fetchProductData,
     cartItems,
     setCartItems: updateCart, // use updateCart to sync localStorage and backend
+    clearCart, // Add clearCart function
     addToCart,
     updateCartItemQuantity,
     removeFromCart,

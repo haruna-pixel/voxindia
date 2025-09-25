@@ -10,10 +10,13 @@ import CartSidebar from '@/components/CartSidebar';
 import { assets } from '@/assets/assets';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import useHydration from '@/hooks/useHydration';
+import { AuthSync } from '@/utils/authSync';
 
 export default function Navbar() {
   const { cartItems } = useAppContext();
   const router = useRouter();
+  const isHydrated = useHydration(); // Use the hook
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -24,32 +27,75 @@ export default function Navbar() {
   const [userName, setUserName] = useState('Guest');
   const [userEmail, setUserEmail] = useState('');
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const verified = sessionStorage.getItem('otp_verified') === 'true';
-      setIsLoggedIn(verified);
-
-      const name = sessionStorage.getItem('user_name') || 'Guest';
-      const phone = sessionStorage.getItem('user_phone') || '';
-      const emailFromPhone = phone.replace('+91', '') + '@voxindia.co';
-
-      setUserName(name);
-      setUserEmail(sessionStorage.getItem('user_email') || emailFromPhone);
+  // Function to update authentication state from sessionStorage
+  const updateAuthState = () => {
+    if (typeof window !== 'undefined' && isHydrated) {
+      const authStatus = AuthSync.getAuthStatus();
+      setIsLoggedIn(authStatus.isAuthenticated);
+      setUserName(authStatus.userName || 'Guest');
+      
+      const emailFromPhone = authStatus.userPhone.replace('+91', '') + '@voxindia.co';
+      setUserEmail(authStatus.userEmail || emailFromPhone);
     }
-  }, []);
+  };
+
+  useEffect(() => {
+    if (!isHydrated) return; // Don't run until hydrated
+    
+    // Initial state update
+    updateAuthState();
+
+    // Handle user switching - when different user logs in
+    const handleUserSwitch = (syncData) => {
+      const currentUserPhone = sessionStorage.getItem('user_phone');
+      const newUserPhone = syncData.userId;
+      
+      // Only clear data if it's actually a different user
+      if (currentUserPhone !== newUserPhone) {
+        console.log('🔄 DIFFERENT USER SWITCH in Navbar:');
+        console.log(`   From: ${currentUserPhone}`);
+        console.log(`   To: ${newUserPhone}`);
+        
+        // Clear localStorage data for different user
+        localStorage.removeItem('cart');
+        localStorage.removeItem('user_address');
+        localStorage.removeItem('user_preferences');
+        localStorage.removeItem('cached_products');
+        localStorage.removeItem('cached_user_data');
+        
+        // Clear component state
+        setIsLoggedIn(false);
+        setUserName('Guest');
+        setUserEmail('');
+        setShowDropdown(false);
+        
+        console.log('🧹 Different user data cleared in Navbar. Refreshing...');
+        
+        toast.success(`Switched to user ending in ${newUserPhone.slice(-4)}`);
+      } else {
+        console.log('✅ SAME USER continuing session in Navbar:', newUserPhone);
+        console.log('   Action: Keeping all existing data');
+      }
+      
+      // Always update auth state (for same or different user)
+      setTimeout(() => {
+        updateAuthState();
+      }, 100);
+      
+      // Auto-close any open modals/dropdowns
+      setShowAuthModal(false);
+    };
+
+    // Setup comprehensive auth synchronization with user switching detection
+    const cleanup = AuthSync.setupSync(updateAuthState, handleUserSwitch);
+    
+    // Cleanup
+    return cleanup;
+  }, [isHydrated]); // Add isHydrated dependency
 
   const handleVerified = () => {
-    setIsLoggedIn(true);
+    updateAuthState(); // Use the centralized function
     toast.success('Logged in successfully');
-
-    if (typeof window !== 'undefined') {
-      const name = sessionStorage.getItem('user_name') || 'Guest';
-      const phone = sessionStorage.getItem('user_phone') || '';
-      const emailFromPhone = phone.replace('+91', '') + '@voxindia.co';
-
-      setUserName(name);
-      setUserEmail(sessionStorage.getItem('user_email') || emailFromPhone);
-    }
   };
 
   useEffect(() => {
@@ -68,15 +114,18 @@ export default function Navbar() {
     sessionStorage.clear();
     setIsLoggedIn(false);
     setShowDropdown(false);
+    
+    // Notify all tabs about logout
+    AuthSync.notifyAuthChange(false);
+    
     toast.success('Logged out');
     router.push('/');
   };
 
-  // <-- FIXED: Sum quantities properly -->
-  const cartCount = Object.values(cartItems || {}).reduce(
-    (total, item) => total + (item.quantity || 0),
-    0
-  );
+  // <-- FIXED: Sum quantities properly and prevent hydration mismatch -->
+  const cartCount = isHydrated 
+    ? Object.values(cartItems || {}).reduce((total, item) => total + (item.quantity || 0), 0)
+    : 0; // Always 0 during SSR to match server render
 
   return (
     <>
@@ -115,7 +164,7 @@ export default function Navbar() {
             <Heart className="w-5 h-5" />
           </button>
           <div className="relative" ref={dropdownRef}>
-            {isLoggedIn ? (
+            {isHydrated && isLoggedIn ? (
               <>
                 <button
                   onClick={() => setShowDropdown((v) => !v)}
@@ -183,6 +232,7 @@ export default function Navbar() {
                 className="text-gray-600 hover:text-black flex items-center justify-center w-8 h-8 rounded-full bg-gray-100"
                 aria-label="Login"
                 type="button"
+                style={{ opacity: isHydrated ? 1 : 0.5 }} // Visual feedback during hydration
               >
                 <UserIcon className="w-5 h-5" />
               </button>

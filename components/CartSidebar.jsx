@@ -2,7 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useAppContext } from "@/context/AppContext";
+import usePhoneVerification from "@/hooks/usePhoneVerification";
+import useHydration from "@/hooks/useHydration";
 import toast from "react-hot-toast";
+import { AuthSync } from "@/utils/authSync";
 
 const colorMap = {
   White: "#fff",
@@ -22,25 +25,113 @@ const CartSidebar = ({ open, onClose, onOpenAuth = () => {} }) => {
     getCartAmount,
     updateCartItemQuantity,
     removeFromCart,
+    clearCart, // Add clearCart function
   } = useAppContext();
 
+  const {
+    isVerified,
+    verifiedPhone,
+    userName,
+    getUserData,
+    canProceedToCheckout,
+  } = usePhoneVerification();
+
+  const isHydrated = useHydration(); // Use the hook
+
   const [otpVerified, setOtpVerified] = useState(false);
-  const [userName, setUserName] = useState("");
+  const [userNameState, setUserNameState] = useState("");
   const [userPhone, setUserPhone] = useState("");
 
+  // Function to update auth state from sessionStorage
+  const updateAuthState = () => {
+    if (typeof window !== 'undefined' && isHydrated) {
+      const authStatus = AuthSync.getAuthStatus();
+      setOtpVerified(authStatus.isAuthenticated);
+      setUserPhone(authStatus.userPhone);
+      setUserNameState(authStatus.userName);
+    }
+  };
+
   useEffect(() => {
-    setUserName(sessionStorage.getItem("user_name") || "");
-    setUserPhone(sessionStorage.getItem("user_phone") || "");
-    setOtpVerified(sessionStorage.getItem("otp_verified") === "true");
-  }, [open]);
+    if (!isHydrated) return; // Don't run until hydrated
+    
+    // Initial state update
+    updateAuthState();
+    
+    // Handle user switching - when different user logs in
+    const handleUserSwitch = (syncData) => {
+      const currentUserPhone = sessionStorage.getItem('user_phone');
+      const newUserPhone = syncData.userId;
+      
+      // Only clear data if it's actually a different user
+      if (currentUserPhone !== newUserPhone) {
+        console.log('🔄 DIFFERENT USER SWITCH in CartSidebar:');
+        console.log(`   From: ${currentUserPhone}`);
+        console.log(`   To: ${newUserPhone}`);
+        
+        // Clear authentication state
+        setOtpVerified(false);
+        setUserPhone('');
+        setUserNameState('');
+        
+        // Clear cart data for complete isolation
+        clearCart();
+        
+        // Close the sidebar immediately
+        onClose();
+        
+        toast.success(`Cart cleared for new user ending in ${newUserPhone.slice(-4)}`);
+      } else {
+        console.log('✅ SAME USER continuing session in CartSidebar:', newUserPhone);
+        console.log('   Action: Keeping cart and user data');
+      }
+      
+      // Always refresh state (for same or different user)
+      setTimeout(() => {
+        updateAuthState();
+      }, 200);
+    };
+    
+    // Setup comprehensive auth synchronization with user switching detection
+    const cleanup = AuthSync.setupSync(updateAuthState, handleUserSwitch);
+    
+    // Cleanup
+    return cleanup;
+  }, [isHydrated]); // Add isHydrated dependency
+  
+  useEffect(() => {
+    // Update when sidebar opens to ensure fresh data
+    if (open && isHydrated) {
+      updateAuthState();
+    }
+  }, [open, isHydrated]);
 
   const handleCheckout = () => {
-    if (!otpVerified) {
-      toast.error("Please verify your phone before checkout");
+    if (!isHydrated) {
+      toast.error('Please wait, loading...');
+      return;
+    }
+    
+    // Direct sessionStorage check - most reliable
+    const isUserVerified = sessionStorage.getItem('otp_verified') === 'true';
+    const userPhoneNumber = sessionStorage.getItem('user_phone');
+    
+    if (!isUserVerified || !userPhoneNumber) {
+      toast.error('Please verify your phone number first');
       onClose();
       onOpenAuth();
       return;
     }
+    
+    // Check if cart is empty (in case of user switch)
+    const cartArray = Object.entries(cartItems || {});
+    if (cartArray.length === 0) {
+      toast.error('Your cart is empty');
+      onClose();
+      return;
+    }
+    
+    // User is verified and has items, proceed to checkout
     onClose();
     window.location.href = "/checkout";
   };
@@ -102,11 +193,11 @@ const CartSidebar = ({ open, onClose, onOpenAuth = () => {} }) => {
           </button>
         </div>
 
-        {otpVerified ? (
+        {isHydrated && otpVerified ? (
           <div className="px-5 py-3 border-b text-gray-700">
-            Logged in as: <strong>{userName}</strong> ({userPhone})
+            Logged in as: <strong>{userNameState}</strong> ({userPhone})
           </div>
-        ) : (
+        ) : isHydrated ? (
          <div className="px-5 py-3 border-b text-red-600 font-semibold flex flex-col gap-2">
   <span>Please verify your phone to proceed.</span>
   <button
@@ -121,7 +212,10 @@ const CartSidebar = ({ open, onClose, onOpenAuth = () => {} }) => {
   Verify Now
 </button>
 </div>
-
+        ) : (
+          <div className="px-5 py-3 border-b text-gray-500">
+            Loading...
+          </div>
         )}
 
         <div className="p-5 overflow-y-auto flex-grow space-y-6">
