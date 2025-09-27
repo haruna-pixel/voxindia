@@ -9,6 +9,16 @@ function PaymentProcessContent() {
   const [processing, setProcessing] = useState(true);
   const [error, setError] = useState(null);
 
+  // Validate critical environment variables on component mount
+  useEffect(() => {
+    console.log('🔍 Initial environment validation...');
+    console.log('Environment check:', {
+      NODE_ENV: process.env.NODE_ENV,
+      NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ? 'Set' : 'Not set',
+      env_keys: Object.keys(process.env).filter(key => key.startsWith('NEXT_PUBLIC')),
+    });
+  }, []);
+
   useEffect(() => {
     const processPayment = async () => {
       try {
@@ -52,9 +62,27 @@ function PaymentProcessContent() {
           throw new Error(orderData.message || 'Failed to create payment order');
         }
         
-        // Check Razorpay public key
+        // Check Razorpay public key with detailed validation
+        console.log('🔍 Validating payment configuration...');
+        console.log('🔑 Available environment variables:', {
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ? 'Present' : 'Missing',
+          NODE_ENV: process.env.NODE_ENV,
+          typeof_key: typeof process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          key_length: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID?.length || 0
+        });
+        
         if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID) {
-          throw new Error('Payment configuration error. Please contact support.');
+          console.error('❌ NEXT_PUBLIC_RAZORPAY_KEY_ID is missing or undefined');
+          console.error('📄 Please check:');
+          console.error('1. .env file contains: NEXT_PUBLIC_RAZORPAY_KEY_ID=your_key');
+          console.error('2. Development server was restarted after adding the variable');
+          console.error('3. Variable name is exactly: NEXT_PUBLIC_RAZORPAY_KEY_ID (case-sensitive)');
+          throw new Error('Payment gateway configuration is missing. Please ensure NEXT_PUBLIC_RAZORPAY_KEY_ID is set in environment variables. Check console for details.');
+        }
+        
+        if (!process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID.startsWith('rzp_')) {
+          console.error('❌ Invalid Razorpay key format:', process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID);
+          throw new Error('Invalid payment gateway key format. Razorpay keys should start with "rzp_".');
         }
         
         // Load Razorpay script
