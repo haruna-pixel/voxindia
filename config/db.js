@@ -13,19 +13,14 @@ async function connectDB() {
     } 
 
     if (!cached.promise) {
-        const opts = {
-            bufferCommands:false
-        }
-
-        cached.promise = mongoose.connect(`${process.env.MONGODB_URI}/quickcart`,opts).then( mongoose => {
+        // Use the same database as lib/db.js to avoid connection conflicts
+        cached.promise = mongoose.connect(process.env.MONGODB_URI).then( mongoose => {
             return mongoose
         })
-
     } 
 
     cached.conn = await cached.promise
     return cached.conn
-
 }
 
 export default connectDB

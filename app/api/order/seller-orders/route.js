@@ -1,4 +1,4 @@
-import connectDB from "@/config/db";
+import connectDB from "@/lib/db";
 import authSeller from "@/lib/authSeller";
 import Address from "@/models/Address";
 import Order from "@/models/Order";
