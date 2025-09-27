@@ -1,6 +1,6 @@
 // pages/api/user/address.js
 
-import connectDB from "@/lib/db";
+import connectDB from "@/config/db";
 import Address from "@/models/Address";
 
 export default async function handler(req, res) {

@@ -1,4 +1,4 @@
-import connectDB from '@/lib/db'
+import connectDB from '@/config/db'
 import authSeller from '@/lib/authSeller'
 import Product from '@/models/Product'
 import { getAuth } from '@clerk/nextjs/server'
