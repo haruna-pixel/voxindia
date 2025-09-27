@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 
-export default function PaymentProcessPage() {
+function PaymentProcessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [processing, setProcessing] = useState(true);
@@ -214,5 +214,32 @@ export default function PaymentProcessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function PaymentProcessFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+        <div className="animate-spin text-blue-500 text-6xl mb-4">⚙️</div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Loading Payment</h1>
+        <p className="text-gray-600 mb-6">Preparing payment page...</p>
+        <div className="flex justify-center">
+          <div className="animate-pulse flex space-x-1">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PaymentProcessPage() {
+  return (
+    <Suspense fallback={<PaymentProcessFallback />}>
+      <PaymentProcessContent />
+    </Suspense>
   );
 }
