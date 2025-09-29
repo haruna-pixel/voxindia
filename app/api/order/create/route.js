@@ -2,7 +2,7 @@
 
 import { NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
-import connectDB from "@/lib/db";
+import connectDB from "@/config/db";
 import Order from "@/models/Order";
 import mongoose from "mongoose";
 

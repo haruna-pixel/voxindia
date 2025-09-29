@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import twilio from 'twilio';
-import connectDB from '@/lib/db';
+import connectDB from '@/config/db';
 import User from '@/models/User';
 import jwt from 'jsonwebtoken';
 
@@ -172,8 +172,14 @@ export async function POST(req) {
     let statusCode = 500;
     
     if (error?.code === 20404) {
-      errorMessage = 'Verification service not found. Please contact support.';
-      console.error('🚨 Twilio service not found - check TWILIO_SERVICE_SID in production');
+      errorMessage = 'Twilio Verify Service not found. Please check your Twilio Service SID configuration.';
+      console.error('🚨 CRITICAL: Twilio service not found - TWILIO_SERVICE_SID is invalid');
+      console.error('🔧 Service SID being used:', process.env.TWILIO_SERVICE_SID);
+      console.error('📝 Action required:');
+      console.error('   1. Log into Twilio Console');
+      console.error('   2. Go to Verify → Services');
+      console.error('   3. Create a new service or find existing one');
+      console.error('   4. Update TWILIO_SERVICE_SID in production environment');
     } else if (error?.code === 20003) {
       errorMessage = 'Authentication failed. Please contact support.';
       console.error('🚨 Twilio authentication failed - check credentials in production');
