@@ -9,6 +9,7 @@ import Loading from "@/components/Loading";
 import { useAppContext } from "@/context/AppContext";
 import { ChevronDown, ChevronUp, Wrench, Truck, ShieldCheck } from "lucide-react";
 import toast from 'react-hot-toast';
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const COLOR_HEX = {
   White: "#ffffff",
@@ -250,11 +251,11 @@ export default function ProductPage() {
   const displayPrice = buyMode === "box" ? basePrice * 6 : basePrice;
   const discountPercent =
     productData.price &&
-    productData.offerPrice &&
-    productData.price > productData.offerPrice
+      productData.offerPrice &&
+      productData.price > productData.offerPrice
       ? Math.round(
-          ((productData.price - productData.offerPrice) / productData.price) * 100
-        )
+        ((productData.price - productData.offerPrice) / productData.price) * 100
+      )
       : 0;
   const variantColorImages = variants.flatMap((v) => v.colors).map((c) => c.image);
   const combinedImages = Array.from(
@@ -318,6 +319,7 @@ export default function ProductPage() {
             >
               {mainImage ? (
                 <Image
+                  loader={cloudinaryLoader}
                   src={mainImage}
                   alt={productData.name}
                   fill
@@ -373,11 +375,11 @@ export default function ProductPage() {
                       setQuantity(1);
                     }}
                     type="button"
-                    className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer border-2 transition-transform hover:scale-105 ${
-                      mainImage === img ? "border-orange-500" : "border-transparent"
-                    }`}
+                    className={`w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 cursor-pointer border-2 transition-transform hover:scale-105 ${mainImage === img ? "border-orange-500" : "border-transparent"
+                      }`}
                   >
                     <Image
+                      loader={cloudinaryLoader}
                       src={img}
                       alt={`Thumb ${i}`}
                       width={80}
@@ -446,9 +448,8 @@ export default function ProductPage() {
               <span className="text-sm font-medium">Select Mode:</span>
               <button
                 onClick={() => setBuyMode("panel")}
-                className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  buyMode === "panel" ? "bg-black text-white" : "bg-gray-200 text-black"
-                }`}
+                className={`px-3 py-1 rounded-full text-sm font-medium ${buyMode === "panel" ? "bg-black text-white" : "bg-gray-200 text-black"
+                  }`}
               >
                 By Panel
               </button>
@@ -459,11 +460,10 @@ export default function ProductPage() {
                 <button
                   key={i}
                   onClick={() => selectVariant(i)}
-                  className={`py-2 px-4 border rounded-md font-semibold ${
-                    selectedVariantIndex === i
+                  className={`py-2 px-4 border rounded-md font-semibold ${selectedVariantIndex === i
                       ? "bg-black text-white"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   {v.name}
                 </button>
@@ -477,9 +477,8 @@ export default function ProductPage() {
                   key={i}
                   onClick={() => selectColor(i)}
                   title={c.name}
-                  className={`w-10 h-10 rounded-full border-2 border-black flex items-center justify-center cursor-pointer ${
-                    selectedColorIndex === i ? "ring-2 ring-blue-600" : ""
-                  }`}
+                  className={`w-10 h-10 rounded-full border-2 border-black flex items-center justify-center cursor-pointer ${selectedColorIndex === i ? "ring-2 ring-blue-600" : ""
+                    }`}
                   style={{ backgroundColor: COLOR_HEX[c.name] || "#ccc" }}
                 >
                   <div className="w-6 h-6 rounded-full" />

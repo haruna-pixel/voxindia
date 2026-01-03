@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 import { useAppContext } from "@/context/AppContext";
 
 const ProductCard = ({ product }) => {
@@ -17,12 +18,12 @@ const ProductCard = ({ product }) => {
     >
       <div className="cursor-pointer group relative bg-gray-500/10 rounded-lg w-full h-52 flex items-center justify-center">
         <Image
+          loader={cloudinaryLoader}
           src={product.image[0]}
           alt={product.name}
           className="group-hover:scale-105 transition object-cover w-4/5 h-4/5 md:w-full md:h-full"
           width={800}
           height={800}
-          unoptimized
         />
         <button className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md pointer-events-none">
           <Image

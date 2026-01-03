@@ -5,6 +5,7 @@ import OrderSummary from "@/components/OrderSummary";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useAppContext } from "@/context/AppContext";
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const Cart = () => {
 
@@ -51,6 +52,7 @@ const Cart = () => {
                         <div>
                           <div className="rounded-lg overflow-hidden bg-gray-500/10 p-2">
                             <Image
+                              loader={cloudinaryLoader}
                               src={product.image[0]}
                               alt={product.name}
                               className="w-16 h-auto object-cover mix-blend-multiply"
@@ -102,7 +104,7 @@ const Cart = () => {
               </tbody>
             </table>
           </div>
-          <button onClick={()=> router.push('/all-products')} className="group flex items-center mt-6 gap-2 text-red-700">
+          <button onClick={() => router.push('/all-products')} className="group flex items-center mt-6 gap-2 text-red-700">
             <Image
               className="group-hover:-translate-x-1 transition"
               src={assets.arrow_right_icon_colored}

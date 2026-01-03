@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import useHydration from '@/hooks/useHydration';
 import { AuthSync } from '@/utils/authSync';
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 export default function Navbar() {
   const { cartItems } = useAppContext();
@@ -33,7 +34,7 @@ export default function Navbar() {
       const authStatus = AuthSync.getAuthStatus();
       setIsLoggedIn(authStatus.isAuthenticated);
       setUserName(authStatus.userName || 'Guest');
-      
+
       const emailFromPhone = authStatus.userPhone.replace('+91', '') + '@voxindia.co';
       setUserEmail(authStatus.userEmail || emailFromPhone);
     }
@@ -41,7 +42,7 @@ export default function Navbar() {
 
   useEffect(() => {
     if (!isHydrated) return; // Don't run until hydrated
-    
+
     // Initial state update
     updateAuthState();
 
@@ -49,46 +50,46 @@ export default function Navbar() {
     const handleUserSwitch = (syncData) => {
       const currentUserPhone = sessionStorage.getItem('user_phone');
       const newUserPhone = syncData.userId;
-      
+
       // Only clear data if it's actually a different user
       if (currentUserPhone !== newUserPhone) {
         console.log('🔄 DIFFERENT USER SWITCH in Navbar:');
         console.log(`   From: ${currentUserPhone}`);
         console.log(`   To: ${newUserPhone}`);
-        
+
         // Clear localStorage data for different user
         localStorage.removeItem('cart');
         localStorage.removeItem('user_address');
         localStorage.removeItem('user_preferences');
         localStorage.removeItem('cached_products');
         localStorage.removeItem('cached_user_data');
-        
+
         // Clear component state
         setIsLoggedIn(false);
         setUserName('Guest');
         setUserEmail('');
         setShowDropdown(false);
-        
+
         console.log('🧹 Different user data cleared in Navbar. Refreshing...');
-        
+
         toast.success(`Switched to user ending in ${newUserPhone.slice(-4)}`);
       } else {
         console.log('✅ SAME USER continuing session in Navbar:', newUserPhone);
         console.log('   Action: Keeping all existing data');
       }
-      
+
       // Always update auth state (for same or different user)
       setTimeout(() => {
         updateAuthState();
       }, 100);
-      
+
       // Auto-close any open modals/dropdowns
       setShowAuthModal(false);
     };
 
     // Setup comprehensive auth synchronization with user switching detection
     const cleanup = AuthSync.setupSync(updateAuthState, handleUserSwitch);
-    
+
     // Cleanup
     return cleanup;
   }, [isHydrated]); // Add isHydrated dependency
@@ -114,16 +115,16 @@ export default function Navbar() {
     sessionStorage.clear();
     setIsLoggedIn(false);
     setShowDropdown(false);
-    
+
     // Notify all tabs about logout
     AuthSync.notifyAuthChange(false);
-    
+
     toast.success('Logged out');
     router.push('/');
   };
 
   // <-- FIXED: Sum quantities properly and prevent hydration mismatch -->
-  const cartCount = isHydrated 
+  const cartCount = isHydrated
     ? Object.values(cartItems || {}).reduce((total, item) => total + (item.quantity || 0), 0)
     : 0; // Always 0 during SSR to match server render
 
@@ -132,7 +133,7 @@ export default function Navbar() {
       <nav className="flex justify-between items-center px-4 md:px-16 py-2 bg-white border-b relative z-[9999]">
         {/* Logo */}
         <div className="cursor-pointer" onClick={() => router.push('/')}>
-          <Image src={assets.logo} alt="Logo" width={80} height={28} />
+          <Image loader={cloudinaryLoader} src={assets.logo} alt="Logo" width={80} height={28} />
         </div>
 
         {/* Links */}
@@ -250,10 +251,10 @@ export default function Navbar() {
       )}
       {/* Cart Sidebar */}
       <CartSidebar
-  open={isCartOpen}
-  onClose={() => setIsCartOpen(false)}
-  onOpenAuth={() => setShowAuthModal(true)} // ✅ THIS IS CRUCIAL
-/>
+        open={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onOpenAuth={() => setShowAuthModal(true)} // ✅ THIS IS CRUCIAL
+      />
 
     </>
   );

@@ -100,6 +100,7 @@ export async function POST(request) {
       success: true,
       message: "Order placed successfully",
       order,
+      orderId: order.sequentialId, // Include the sequential order ID
       razorpayOrderId: order.razorpayOrderId || null,
     });
   } catch (err) {

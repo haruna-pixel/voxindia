@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { assets } from '../../assets/assets';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const SideBar = () => {
     const pathname = usePathname()
@@ -29,6 +30,7 @@ const SideBar = () => {
                             }
                         >
                             <Image
+                                loader={cloudinaryLoader}
                                 src={item.icon}
                                 alt={`${item.name.toLowerCase()}_icon`}
                                 className="w-7 h-7"

@@ -22,6 +22,14 @@ const nextConfig = {
             },
         ];
     },
+    async rewrites() {
+        return [
+            {
+                source: '/socket.io/:path*',
+                destination: '/api/socket-mock',
+            },
+        ];
+    },
 };
 
 export default nextConfig;

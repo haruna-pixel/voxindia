@@ -3,16 +3,18 @@ import { assets } from '@/assets/assets'
 import { useAppContext } from '@/context/AppContext'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const OrderPlaced = () => {
   const { router, cartItems = [], getCartAmount } = useAppContext()
   const [orderId, setOrderId] = useState(null)
 
   useEffect(() => {
-    const lastOrderId = localStorage.getItem('last_order_id')
-    const newOrderId = lastOrderId ? parseInt(lastOrderId) + 1 : 13000
-    setOrderId(newOrderId)
-    localStorage.setItem('last_order_id', newOrderId.toString())
+    // Get the order ID from localStorage (set by the checkout page)
+    const storedOrderId = localStorage.getItem('last_order_id')
+    if (storedOrderId) {
+      setOrderId(storedOrderId)
+    }
 
     const timer = setTimeout(() => {
       router.push('/checkout')
@@ -25,7 +27,7 @@ const OrderPlaced = () => {
     <div className='h-screen px-4 py-10 flex flex-col justify-center items-center gap-6 text-center'>
       {/* ✅ Spinner with checkmark */}
       <div className="flex justify-center items-center relative">
-        <Image className="absolute p-5" src={assets.checkmark} alt="Success" />
+        <Image loader={cloudinaryLoader} className="absolute p-5" src={assets.checkmark} alt="Success" />
         <div className="animate-spin rounded-full h-24 w-24 border-4 border-t-green-300 border-gray-200"></div>
       </div>
 

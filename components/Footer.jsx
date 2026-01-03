@@ -2,6 +2,7 @@ import React from "react";
 import { assets } from "@/assets/assets";
 import Image from "next/image";
 import Link from "next/link";
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const socialLinks = [
   {
@@ -120,7 +121,7 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div>
-          <Image src={assets.logo} alt="VOX Logo" width={80} height={40} />
+            <Image loader={cloudinaryLoader} src={assets.logo} alt="VOX Logo" width={80} height={40} />
             <p className="mt-4 max-w-xs text-sm leading-relaxed">
               Premium slatted wall and ceiling panels for modern interiors.
             </p>

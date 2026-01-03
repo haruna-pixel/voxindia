@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const collections = [
   {
@@ -49,7 +50,7 @@ const OurCollections = () => {
             className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col"
           >
             <div className="h-64 w-full relative">
-              <Image src={image} alt={title} fill className="object-cover" />
+              <Image loader={cloudinaryLoader} src={image} alt={title} fill className="object-cover" />
             </div>
 
             <div className="flex flex-col justify-between flex-1 p-6">

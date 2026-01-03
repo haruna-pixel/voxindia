@@ -9,6 +9,7 @@ import { assets } from '@/assets/assets';
 import usePhoneVerification from '@/hooks/usePhoneVerification';
 import { AuthSync } from '@/utils/authSync';
 import { ForceRefresh } from '@/utils/forceRefresh';
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
@@ -47,7 +48,7 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
     if (isOpen) {
       // Pre-fill with existing verified phone if available
       const userData = getUserData();
-      
+
       if (userData.phone && userData.isVerified) {
         setPhone(userData.phoneDigits);
         setOriginalVerifiedPhone(userData.phoneDigits);
@@ -58,12 +59,12 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
         setOriginalVerifiedPhone('');
         setName('');
       }
-      
+
       setCode(Array(OTP_LENGTH).fill(''));
       setLoading(false);
       setStatusMsg('');
       setResendTimer(0);
-      
+
       // Focus the phone input when modal opens
       setTimeout(() => {
         if (step === 'phone' && phoneInputRef.current) {
@@ -96,11 +97,11 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
     // Only allow single digit input
     if (value.length > 1) return;
     if (value && /\D/.test(value)) return;
-    
+
     const newCode = [...code];
     newCode[index] = value;
     setCode(newCode);
-    
+
     // Auto-focus next input if value is entered and not the last input
     if (value && index < OTP_LENGTH - 1) {
       inputsRef.current[index + 1]?.focus();
@@ -111,14 +112,14 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
     e.preventDefault();
     const pasted = e.clipboardData.getData('Text').replace(/\D/g, '').slice(0, OTP_LENGTH);
     const newCode = Array(OTP_LENGTH).fill('');
-    
+
     // Fill the pasted digits
     for (let i = 0; i < pasted.length && i < OTP_LENGTH; i++) {
       newCode[i] = pasted[i];
     }
-    
+
     setCode(newCode);
-    
+
     // Focus the next empty input or the last input if all are filled
     const nextEmptyIndex = newCode.findIndex(digit => !digit);
     const focusIndex = nextEmptyIndex !== -1 ? nextEmptyIndex : OTP_LENGTH - 1;
@@ -129,7 +130,7 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
     // Check if phone number has changed from original verified number
     const phoneWithCountryCode = '+91' + phone;
     const phoneUnchanged = isPhoneNumberVerified(phoneWithCountryCode);
-    
+
     // If phone hasn't changed and user is already verified, skip OTP
     if (phoneUnchanged && isVerified) {
       setStatusMsg('Phone number already verified!');
@@ -138,7 +139,7 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
       setTimeout(onClose, 700);
       return;
     }
-    
+
     setLoading(true);
     try {
       await axios.post('/api/auth/send-otp', { phone: phoneWithCountryCode });
@@ -194,18 +195,18 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
       if (res.data.success && res.data.user) {
         const { user, token } = res.data;
         const phoneWithCountryCode = '+91' + phone;
-        
+
         // Check if this is the same user or a different user
         const currentUserPhone = sessionStorage.getItem('user_phone');
         const isSameUser = currentUserPhone === phoneWithCountryCode;
-        
+
         if (isSameUser) {
           console.log('✅ SAME USER RE-AUTHENTICATING:', phoneWithCountryCode);
           console.log('   Action: Keeping existing data');
         } else {
           console.log('🧹 NEW/DIFFERENT USER LOGIN - Clearing old data for:', phoneWithCountryCode);
           console.log('   Previous user:', currentUserPhone || 'None');
-          
+
           // Only clear data if it's a different user
           sessionStorage.clear();
           localStorage.removeItem('cart');
@@ -213,25 +214,25 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
           localStorage.removeItem('user_preferences');
           localStorage.removeItem('cached_products');
           localStorage.removeItem('cached_user_data');
-          
+
           console.log('✅ Old user data cleared. Setting fresh data for new user.');
         }
-        
+
         // Set user data (fresh for new user, updated for same user)
         setVerification(
           phoneWithCountryCode,
           user.name || name.trim() || '',
           user.email || ''
         );
-        
+
         // Also set in sessionStorage for backward compatibility
         sessionStorage.setItem('user_token', token);
         sessionStorage.setItem('user_image', user.imageUrl || '');
-        
+
         // Notify all tabs about successful authentication with user ID
         const userId = '+91' + phone;
         AuthSync.notifyAuthChange(true, userId);
-        
+
         // Only verify data clearing for different users
         if (!isSameUser) {
           setTimeout(() => {
@@ -241,7 +242,7 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
             }
           }, 500);
         }
-        
+
         setStatusMsg('OTP verified!');
         toast.success('Verified!');
         if (onVerified) onVerified();
@@ -284,7 +285,7 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
           className="absolute top-3 right-3 sm:top-4 sm:right-4 text-gray-500 hover:text-gray-800"
         >✕</button>
         <div className="mb-6 flex justify-center">
-          <Image src={assets.logo} alt="Logo" width={64} height={64} />
+          <Image loader={cloudinaryLoader} src={assets.logo} alt="Logo" width={64} height={64} />
         </div>
         <h2 className="text-center text-xl font-semibold text-gray-900 mb-1">
           {step === 'phone' ? 'Enter Phone Number' : 'Enter OTP'}
@@ -294,8 +295,8 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
             ? originalVerifiedPhone && phone === originalVerifiedPhone
               ? "Phone number verified ✅ (Click continue to proceed)"
               : originalVerifiedPhone && phone !== originalVerifiedPhone
-              ? "⚠️ Phone number changed - OTP verification required"
-              : "We'll send a code to your number"
+                ? "⚠️ Phone number changed - OTP verification required"
+                : "We'll send a code to your number"
             : 'Type the 6-digit code we sent you'}
         </p>
         {statusMsg && (
@@ -384,7 +385,7 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
           onClick={step === 'phone' ? sendOtp : verifyOtp}
           disabled={loading || (step === 'phone' ? !isPhoneValid : otpValue.length < OTP_LENGTH)}
           className={`w-full py-3 rounded-xl text-white font-medium transition
-            ${loading ? 'bg-red-400 cursor-wait' : 
+            ${loading ? 'bg-red-400 cursor-wait' :
               step === 'phone' && originalVerifiedPhone && phone === originalVerifiedPhone
                 ? 'bg-green-600 hover:bg-green-700 focus:ring-2 focus:ring-offset-1 focus:ring-green-600'
                 : 'bg-[#e80808] hover:bg-[#cc0606] focus:ring-2 focus:ring-offset-1 focus:ring-[#e80808]'}`}
@@ -394,10 +395,10 @@ export default function AuthModal({ isOpen, onClose, onVerified }) {
               ? 'Sending...'
               : 'Verifying...'
             : step === 'phone'
-            ? originalVerifiedPhone && phone === originalVerifiedPhone
-              ? 'Continue ✅'
-              : 'Send Code'
-            : 'Verify OTP'}
+              ? originalVerifiedPhone && phone === originalVerifiedPhone
+                ? 'Continue ✅'
+                : 'Send Code'
+              : 'Verify OTP'}
         </button>
       </motion.div>
     </div>

@@ -6,6 +6,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Image from "next/image";
 import OrderSummary from "@/components/OrderSummary";
+import cloudinaryLoader from "@/lib/cloudinaryLoader";
 
 const COLOR_HEX = {
   White: "#ffffff",
@@ -101,12 +102,12 @@ const CheckoutPage = () => {
                       {img && (
                         <div className="flex-shrink-0 mb-2 sm:mb-0">
                           <Image
+                            loader={cloudinaryLoader}
                             src={img}
                             alt={product.name}
                             width={80}
                             height={80}
                             className="rounded-lg object-cover"
-                            unoptimized
                           />
                         </div>
                       )}

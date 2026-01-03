@@ -1,28 +1,34 @@
 import connectDB from "@/config/db";
-import Product from "@/models/Product";
+import Order from "@/models/Order";
+import { getAuth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 export async function GET(req) {
-  await connectDB();
-  const { searchParams } = new URL(req.url);
-  const slug = searchParams.get("slug");
-
-  if (slug) {
-    const product = await Product.findOne({ slug });
-
-    if (!product) {
+  try {
+    await connectDB();
+    
+    // Get the authenticated user
+    const { userId } = getAuth(req);
+    
+    if (!userId) {
       return NextResponse.json(
-        { success: false, message: "Product not found" },
-        { status: 404 }
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
       );
     }
-
+    
+    // Find orders for this user, sorted by creation date
+    const orders = await Order.find({ userId }).sort({ createdAt: -1 });
+    
     return NextResponse.json({
       success: true,
-      product,
+      orders,
     });
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch orders" },
+      { status: 500 }
+    );
   }
-
-  const products = await Product.find();
-  return NextResponse.json({ success: true, products });
 }

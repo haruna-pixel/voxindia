@@ -6,11 +6,22 @@ const transporter = nodemailer.createTransport({
     user: process.env.GMAIL_USER,      // voxbangalore@gmail.com
     pass: process.env.GMAIL_APP_PASS,  // your app password
   },
+  tls: {
+    rejectUnauthorized: false
+  }
 });
 
 export async function POST(request) {
   try {
     const { name, email, phone, altPhone, message } = await request.json();
+
+    if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASS) {
+      console.error("Missing Gmail credentials in environment variables");
+      return new Response(
+        JSON.stringify({ success: false, message: "Server configuration error: Missing email credentials" }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
 
     if (!name || !email || !phone || !message) {
       return new Response(
@@ -41,7 +52,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Contact form email error:", error);
     return new Response(
-      JSON.stringify({ success: false, message: "Server error" }),
+      JSON.stringify({ success: false, message: error.message || "Server error" }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }

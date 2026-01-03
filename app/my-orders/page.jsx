@@ -64,6 +64,10 @@ const MyOrders = () => {
                         <span className="font-medium text-base">
                           {order.items.map((item) => (item?.product?.name || "Unnamed") + ` x ${item.quantity}`).join(", ")}
                         </span>
+                        {/* Display sequential order ID if available */}
+                        {order.sequentialId && (
+                          <span className="text-gray-600">Order ID: #{order.sequentialId}</span>
+                        )}
                         <span>Items: {order.items.length}</span>
                       </p>
                     </div>
@@ -81,9 +85,9 @@ const MyOrders = () => {
                     <p className="font-medium my-auto">{currency}{order.amount}</p>
                     <div>
                       <p className="flex flex-col">
-                        <span>Method: COD</span>
-                        <span>Date: {new Date(order.date).toLocaleDateString()}</span>
-                        <span>Payment: Pending</span>
+                        <span>Method: {order.paymentMethod === 'cod' ? 'COD' : 'Online'}</span>
+                        <span>Date: {new Date(order.createdAt).toLocaleDateString()}</span>
+                        <span>Status: {order.status}</span>
                       </p>
                     </div>
                   </div>

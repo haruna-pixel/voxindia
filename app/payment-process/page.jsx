@@ -148,6 +148,11 @@ function PaymentProcessContent() {
                 console.log('✅ Order confirmed successfully');
                 toast.success('Order placed successfully!');
                 
+                // Store the sequential order ID in localStorage
+                if (confirmData.orderId) {
+                  localStorage.setItem('last_order_id', confirmData.orderId.toString());
+                }
+                
                 // Clear payment data
                 sessionStorage.removeItem('payment_data');
                 sessionStorage.removeItem('payment_token');
